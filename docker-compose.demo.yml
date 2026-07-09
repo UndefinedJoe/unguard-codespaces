@@ -1,0 +1,327 @@
+# Unguard Demo - Docker Compose Version
+# This is a simplified version for demos and testing without Kubernetes
+# For full development, use Skaffold with Kubernetes instead
+
+version: '3.8'
+
+services:
+  # Database Services
+  mariadb:
+    image: bitnamilegacy/mariadb:latest
+    container_name: unguard-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-unguard}
+      MARIADB_DATABASE: unguard
+      MARIADB_USER: unguard
+      MARIADB_PASSWORD: ${DB_PASSWORD:-unguard123}
+      MARIADB_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - unguard
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+
+  redis:
+    image: redis:7-alpine
+    container_name: unguard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - unguard
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+
+  # Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: unguard-jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  # Optional: Ollama for RAG service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: unguard-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - unguard
+    profiles:
+      - full
+      - rag
+
+  # Core Services (minimal demo)
+  user-auth-service:
+    build:
+      context: ./src/user-auth-service
+      dockerfile: Dockerfile
+    container_name: unguard-user-auth-service
+    environment:
+      NODE_ENV: development
+      MARIADB_HOST: mariadb
+      MARIADB_USER: unguard
+      MARIADB_PASSWORD: ${DB_PASSWORD:-unguard123}
+      MARIADB_DATABASE: unguard
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  microblog-service:
+    build:
+      context: ./src/microblog-service
+      dockerfile: Dockerfile
+    container_name: unguard-microblog-service
+    environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: ""
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  ad-service:
+    build:
+      context: ./src/ad-service
+      dockerfile: Dockerfile
+    container_name: unguard-ad-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "5000:5000"
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  proxy-service:
+    build:
+      context: ./src/proxy-service
+      dockerfile: Dockerfile
+    container_name: unguard-proxy-service
+    environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8082:8082"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  profile-service:
+    build:
+      context: ./src/profile-service
+      dockerfile: Dockerfile
+    container_name: unguard-profile-service
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:h2:mem:testdb"
+      SPRING_H2_CONSOLE_ENABLED: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8083:8083"
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  membership-service:
+    build:
+      context: ./src/membership-service
+      dockerfile: Dockerfile
+    container_name: unguard-membership-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MARIADB_HOST: mariadb
+      MARIADB_USER: unguard
+      MARIADB_PASSWORD: ${DB_PASSWORD:-unguard123}
+      MARIADB_DATABASE: unguard
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "5001:5001"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  like-service:
+    build:
+      context: ./src/like-service
+      dockerfile: Dockerfile
+    container_name: unguard-like-service
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_USER: unguard
+      MARIADB_PASSWORD: ${DB_PASSWORD:-unguard123}
+      MARIADB_DATABASE: unguard
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8084:8084"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  status-service:
+    build:
+      context: ./src/status-service
+      dockerfile: Dockerfile
+    container_name: unguard-status-service
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8085:8085"
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  payment-service:
+    build:
+      context: ./src/payment-service
+      dockerfile: Dockerfile
+    container_name: unguard-payment-service
+    environment:
+      FLASK_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8086:8086"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  rag-service:
+    build:
+      context: ./src/rag-service
+      dockerfile: Dockerfile
+    container_name: unguard-rag-service
+    environment:
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8087:8087"
+    depends_on:
+      - ollama
+    networks:
+      - unguard
+    profiles:
+      - full
+      - rag
+
+  feedback-ingestion-service:
+    build:
+      context: ./src/feedback-ingestion-service
+      dockerfile: Dockerfile
+    container_name: unguard-feedback-ingestion-service
+    environment:
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      RAG_SERVICE_URL: "http://rag-service:8087"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8088:8088"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - unguard
+    profiles:
+      - full
+      - rag
+
+  frontend:
+    build:
+      context: ./src/frontend-nextjs
+      dockerfile: Dockerfile
+    container_name: unguard-frontend
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3000:3000"
+    networks:
+      - unguard
+    profiles:
+      - full
+
+  # Load Generator
+  user-simulator:
+    build:
+      context: ./src/user-simulator
+      dockerfile: Dockerfile
+    container_name: unguard-user-simulator
+    environment:
+      TARGET_URL: "http://frontend:3000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      - frontend
+    networks:
+      - unguard
+    profiles:
+      - full
+
+networks:
+  unguard:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:
+  ollama_data:
