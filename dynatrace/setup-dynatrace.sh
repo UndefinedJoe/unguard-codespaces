@@ -42,10 +42,11 @@ kubectl -n dynatrace create secret generic dynakube \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # 3. Patch dynakube.yaml with this environment's tenant URL, tenant host, and cluster identifier.
-#    Safe to re-run: once replaced, the placeholder text no longer matches, so sed is a no-op.
-sed -i "s,TENANTURL_TOREPLACE,$DT_URL,g" "$DYNAKUBE_FILE"
-sed -i "s,TENANTHOST_TOREPLACE,$DT_HOST,g" "$DYNAKUBE_FILE"
-sed -i "s,CLUSTER_NAME_TO_REPLACE,$CLUSTER_NAME,g" "$DYNAKUBE_FILE"
+#    Safe to re-run: envsubst handles variable substitution without sed delimiter issues.
+export DT_URL DT_HOST CLUSTER_NAME
+cp "$DYNAKUBE_FILE" "$DYNAKUBE_FILE.bak"
+envsubst < "$DYNAKUBE_FILE.bak" > "$DYNAKUBE_FILE"
+rm "$DYNAKUBE_FILE.bak"
 
 # 4. Apply the DynaKube custom resources (OneAgent, ActiveGate, etc.).
 kubectl -n dynatrace apply -f "$DYNAKUBE_FILE"
