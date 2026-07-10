@@ -71,19 +71,43 @@ echo "Kustomize: $(kustomize version --short)"
 echo "Kind: $(kind --version)"
 
 echo ""
+echo "🚀 Setting up Kubernetes cluster..."
+
+# Create Kind cluster
+if kind get clusters | grep -q "^unguard$"; then
+  echo "   ℹ️  Cluster 'unguard' already exists, skipping creation"
+else
+  kind create cluster --name unguard --config ./k8s-manifests/localdev/kind/cluster-config.yaml
+  echo "   ✅ Kind cluster 'unguard' created"
+fi
+
+# Set up ingress
+echo "📋 Configuring ingress..."
+kubectl apply -k ./k8s-manifests/localdev/kind/ 2>/dev/null || echo "   ⚠️  Ingress setup may need manual verification"
+
+# Add unguard.kube to /etc/hosts
+echo "🌐 Configuring /etc/hosts..."
+if ! grep -q "unguard.kube" /etc/hosts; then
+  echo "127.0.0.1 unguard.kube" >> /etc/hosts
+  echo "   ✅ Added unguard.kube to /etc/hosts"
+else
+  echo "   ℹ️  unguard.kube already in /etc/hosts"
+fi
+
+echo ""
 echo "✨ Unguard DevContainer setup complete!"
 echo ""
 echo "🚀 Next steps:"
 echo ""
-echo "  1️⃣  For Kubernetes deployment with Dynatrace monitoring:"
-echo "     kind create cluster --name unguard --config ./k8s-manifests/localdev/kind/cluster-config.yaml"
-echo "     kubectl apply -k ./k8s-manifests/localdev/kind/"
-echo ""
-echo "  2️⃣  Set up Dynatrace (requires DT_URL, DT_TOKEN, DT_OPERATOR_TOKEN):"
+echo "  1️⃣  Set up Dynatrace (requires DT_URL, DT_TOKEN, DT_OPERATOR_TOKEN):"
 echo "     bash ./dynatrace/setup-dynatrace.sh"
 echo ""
-echo "  3️⃣  Deploy Unguard with Skaffold:"
+echo "  2️⃣  Deploy Unguard with Skaffold:"
 echo "     skaffold dev"
+echo ""
+echo "  📊 Access the application:"
+echo "     Frontend: http://unguard.kube"
+echo "     Jaeger:   http://unguard.kube/jaeger"
 echo ""
 echo "  💡 Or skip Kubernetes and use Docker Compose (lighter):"
 echo "     docker-compose -f docker-compose.demo.yml --profile full up -d"
