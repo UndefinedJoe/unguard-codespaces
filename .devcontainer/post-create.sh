@@ -19,8 +19,9 @@ apt-get install -y --no-install-recommends \
     ca-certificates
 
 # Install Node.js (for frontend and user-simulator)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs npm
+# Use direct download to avoid package conflicts
+NODE_VERSION="20.11.0"
+curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C /usr/local --strip-components=1
 
 # Install Python (for payment-service and rag-service)
 apt-get install -y python3 python3-pip python3-venv
