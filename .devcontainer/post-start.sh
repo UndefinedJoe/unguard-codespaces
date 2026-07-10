@@ -66,4 +66,20 @@ else
   fi
 fi
 
+# Auto-start Skaffold in the background
+echo "🚀 Starting Skaffold..."
+if pgrep -f "skaffold dev" > /dev/null 2>&1; then
+  echo "   ℹ️  Skaffold already running"
+else
+  if kind get clusters | grep -q "^unguard$"; then
+    echo "   📦 Starting Skaffold in background..."
+    nohup skaffold dev > /tmp/skaffold.log 2>&1 &
+    sleep 3  # Give Skaffold time to start
+    echo "   ✅ Skaffold started (logs: tail -f /tmp/skaffold.log)"
+  else
+    echo "   ⚠️  Kind cluster not ready. Skaffold will be started manually when needed."
+    echo "      Run: skaffold dev"
+  fi
+fi
+
 echo ""
