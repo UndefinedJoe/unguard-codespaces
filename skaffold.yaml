@@ -186,6 +186,15 @@ profiles:
         path: /deploy/helm/releases/1/valuesFiles/-
         value: "./chart/aws.yaml"
 
+  - name: codespaces
+    # Exposes the ingress at this Codespace's forwarded-port URL instead of
+    # unguard.kube. Run ./chart/generate-codespaces-values.sh first to
+    # generate chart/codespaces.yaml (gitignored — hostname is per-Codespace).
+    patches:
+      - op: add
+        path: /deploy/helm/releases/1/valuesFiles/-
+        value: "./chart/codespaces.yaml"
+
   - name: malicious-load-generator
     patches:
       - op: add

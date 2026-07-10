@@ -23,6 +23,9 @@ aws:
 # Ingress
 ingress:
   name: ingress
+  # Host used when localDev.enabled is true. Overridden by the "codespaces"
+  # Skaffold profile via chart/codespaces.yaml (generated, not committed).
+  host: unguard.kube
 
 # Tracing
 tracing:

@@ -23,14 +23,31 @@ kind create cluster --name unguard --config ./k8s-manifests/localdev/kind/cluste
 # Set up ingress
 kubectl apply -k ./k8s-manifests/localdev/kind/
 
+# (Optional) Deploy Dynatrace monitoring (installs the Operator via Helm, then DynaKube)
+./dynatrace/setup-dynatrace.sh
+```
+
+**If running locally (not in a Codespace):**
+```bash
 # Add to /etc/hosts (one-time)
 echo "127.0.0.1 unguard.kube" >> /etc/hosts
 
 # Deploy all services with Skaffold (watch mode)
 skaffold dev
 ```
-
 Then visit: **http://unguard.kube**
+
+**If running in a GitHub Codespace** (exposes the app via the Codespace's forwarded-port URL instead of `unguard.kube` — no `/etc/hosts` edit needed):
+```bash
+# Generate an ingress host override for this Codespace
+./chart/generate-codespaces-values.sh
+
+# Deploy all services with Skaffold, using the codespaces profile
+skaffold dev -p codespaces
+```
+Then visit the URL printed by `generate-codespaces-values.sh` (`https://$CODESPACE_NAME-80.app.github.dev`) — make sure port 80 is set to **Public** visibility in the Codespace's **Ports** tab if you're testing from outside the Codespace.
+
+> The Dynatrace step requires `DT_URL`, `DT_TOKEN`, and `DT_OPERATOR_TOKEN` to be set — these come from the devcontainer secrets (see `.devcontainer/devcontainer.json`) and are populated automatically when the container starts.
 
 ### Option B: Docker Compose (Lightweight, Good for Demos)
 

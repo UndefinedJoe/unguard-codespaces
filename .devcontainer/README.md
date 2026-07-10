@@ -60,12 +60,29 @@ kind create cluster --name unguard --config ./k8s-manifests/localdev/kind/cluste
 kubectl apply -k ./k8s-manifests/localdev/kind/
 ```
 
-**Step 3: Configure /etc/hosts** (one-time)
+**Step 3: Expose the ingress**
+
+If running locally (not in a Codespace), map `unguard.kube` to localhost (one-time):
 ```bash
 echo "127.0.0.1 unguard.kube" >> /etc/hosts
 ```
 
-**Step 4: Start with Skaffold**
+If running in a GitHub Codespace, generate an ingress host override pointing at this Codespace's forwarded-port URL instead (no `/etc/hosts` edit — see Step 5 for the matching Skaffold profile):
+```bash
+./chart/generate-codespaces-values.sh
+```
+
+**Step 4: (Optional) Deploy Dynatrace monitoring**
+```bash
+# Requires DT_URL, DT_TOKEN, and DT_OPERATOR_TOKEN to be set (populated automatically
+# from the devcontainer secrets — see .devcontainer/devcontainer.json)
+# Installs the Dynatrace Operator via Helm, then creates the secret and applies DynaKube.
+./dynatrace/setup-dynatrace.sh
+```
+
+**Step 5: Start with Skaffold**
+
+If running locally:
 ```bash
 # Watch mode - auto-rebuilds on code changes
 skaffold dev
@@ -74,8 +91,17 @@ skaffold dev
 skaffold run
 ```
 
-**Step 5: Access the application**
-- Frontend: http://unguard.kube
+If running in a GitHub Codespace, use the `codespaces` profile so the ingress picks up the host generated in Step 3:
+```bash
+skaffold dev -p codespaces
+
+# Or just deploy once
+skaffold run -p codespaces
+```
+
+**Step 6: Access the application**
+- Local: Frontend at http://unguard.kube
+- Codespace: Frontend at the URL printed by `generate-codespaces-values.sh` (`https://$CODESPACE_NAME-80.app.github.dev`) — set port 80 to **Public** visibility in the **Ports** tab if testing from outside the Codespace
 - Jaeger Tracing: http://localhost:16686
 
 ### Path 2: Docker Compose (Lightweight Demo)

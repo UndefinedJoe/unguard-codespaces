@@ -1,0 +1,125 @@
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: unguard-codespaces
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  annotations:
+    feature.dynatrace.com/k8s-app-enabled: "true"
+# Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+spec:
+  apiUrl: TENANTURL_TOREPLACE/api
+  tokens: dynakube
+  networkZone: CLUSTER_NAME_TO_REPLACE
+  activeGate:
+    capabilities:
+      - kubernetes-monitoring
+    resources:
+      requests:
+        cpu: 200m
+        memory: 6Gi
+      limits:
+        cpu: 1000m
+        memory: 6Gi
+    replicas: 1
+  kspm:
+    mappedHostPaths:
+      - /boot
+      - /etc
+      - /proc/sys/kernel
+      - /sys/fs
+      - /sys/kernel/security/apparmor
+      - /usr/lib/systemd/system
+      - /var/lib
+  templates:
+    kspmNodeConfigurationCollector:
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-k8s-node-config-collector
+        tag: 1.5.12
+---
+apiVersion: dynatrace.com/v1beta6
+kind: DynaKube
+metadata:
+  name: unguard-codespaces-agents
+  namespace: dynatrace
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+# Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
+spec:
+  apiUrl: TENANTURL_TOREPLACE/api
+  tokens: dynakube
+  networkZone: CLUSTER_NAME_TO_REPLACE
+  oneAgent:
+    hostGroup: CLUSTER_NAME_TO_REPLACE
+    cloudNativeFullStack:
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+  activeGate:
+    capabilities:
+      - routing
+      - debugging
+    resources:
+      requests:
+        cpu: 250m
+        memory: 2Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    replicas: 3
+  templates:
+    extensionExecutionController:
+      imageRef:
+        repository: TENANTHOST_TOREPLACE/linux/dynatrace-eec
+        tag: latest
+    otelCollector:
+      imageRef:
+        repository: public.ecr.aws/dynatrace/dynatrace-otel-collector
+        tag: latest
+  logMonitoring: {}
+  telemetryIngest:
+    protocols:
+      - jaeger
+      - otlp
+      - statsd
+      - zipkin
+    serviceName: telemetry-ingest
+  extensions:
+    prometheus: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  name: dynatrace-kubernetes-monitoring-sensitive
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+    verbs:
+      - list
+      - watch
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    dynatrace.com/created-by: "dynatrace.kubernetes"
+  name: dynatrace-kubernetes-monitoring-sensitive
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-kubernetes-monitoring-sensitive
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-activegate
+    namespace: dynatrace
