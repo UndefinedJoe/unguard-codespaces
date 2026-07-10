@@ -31,7 +31,12 @@ pip3 install --upgrade pip setuptools wheel
 apt-get install -y openjdk-17-jdk maven
 
 # Install .NET SDK (for ad-service and membership-service)
-apt-get install -y dotnet-sdk-7.0
+# Use Microsoft's official installer since apt repos may not have it
+curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+chmod +x dotnet-install.sh
+./dotnet-install.sh --channel 7.0 --install-dir /usr/local/dotnet
+ln -sf /usr/local/dotnet/dotnet /usr/local/bin/dotnet
+rm dotnet-install.sh
 
 # Install Go (for status-service)
 apt-get install -y golang-go
