@@ -9,9 +9,9 @@ metadata:
     feature.dynatrace.com/k8s-app-enabled: "true"
 # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 spec:
-  apiUrl: ${DT_URL}/api
+  apiUrl: "${DT_URL}/api"
   tokens: dynakube
-  networkZone: ${CLUSTER_NAME}
+  networkZone: "${CLUSTER_NAME}"
   activeGate:
     capabilities:
       - kubernetes-monitoring
@@ -47,11 +47,11 @@ metadata:
     dynatrace.com/created-by: "dynatrace.kubernetes"
 # Link to api reference for further information: https://docs.dynatrace.com/docs/ingest-from/setup-on-k8s/reference/dynakube-parameters
 spec:
-  apiUrl: ${DT_URL}/api
+  apiUrl: "${DT_URL}/api"
   tokens: dynakube
-  networkZone: ${CLUSTER_NAME}
+  networkZone: "${CLUSTER_NAME}"
   oneAgent:
-    hostGroup: ${CLUSTER_NAME}
+    hostGroup: "${CLUSTER_NAME}"
     cloudNativeFullStack:
       tolerations:
         - effect: NoSchedule
@@ -75,7 +75,7 @@ spec:
   templates:
     extensionExecutionController:
       imageRef:
-        repository: ${DT_HOST}/linux/dynatrace-eec
+        repository: "${DT_HOST}/linux/dynatrace-eec"
         tag: latest
     otelCollector:
       imageRef:

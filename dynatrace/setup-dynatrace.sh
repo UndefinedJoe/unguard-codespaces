@@ -25,6 +25,15 @@ CLUSTER_NAME="${GITHUB_USER:-$(whoami)}"
 DT_HOST="${DT_URL#*://}"
 DT_HOST="${DT_HOST%/}"
 
+# Validate derived variables
+if [[ -z "$DT_HOST" ]]; then
+  echo "❌ DT_HOST is empty. Check that DT_URL is properly formatted." >&2
+  exit 1
+fi
+
+echo "✅ Using Dynatrace tenant: $DT_URL"
+echo "✅ Cluster name: $CLUSTER_NAME"
+
 # 1. Install the Dynatrace Operator via Helm.
 #    --create-namespace creates "dynatrace" (no separate `kubectl create namespace` needed).
 #    --atomic waits for the release to become ready and rolls back on failure, so no
