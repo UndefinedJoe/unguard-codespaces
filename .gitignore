@@ -258,8 +258,7 @@ node_modules
 # Chart dependencies
 **/charts/*.tgz
 
-# Generated per-Codespace ingress host override (see chart/generate-codespaces-values.sh)
-chart/codespaces.yaml
+
 
 
 .DS_Store

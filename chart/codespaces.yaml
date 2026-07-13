@@ -1,0 +1,6 @@
+# Codespaces overrides for Unguard Helm chart
+# Uses wildcard hostname so ingress accepts any domain
+# (e.g., https://your-codespace-name-80.app.github.dev)
+
+ingress:
+  host: "*"

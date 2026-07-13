@@ -80,7 +80,9 @@ deploy:
         chartPath: ./chart
         namespace: unguard
         createNamespace: true
-        valuesFiles: ["./chart/values.yaml"]
+        valuesFiles:
+          - "./chart/values.yaml"
+          - "./chart/codespaces.yaml"
         setValueTemplates:
           # ad-service
           adService.deployment.container.image.repository: "{{.IMAGE_REPO_unguard_ad_service}}"
