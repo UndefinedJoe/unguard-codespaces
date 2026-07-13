@@ -2,47 +2,7 @@
 set -e
 
 echo "🔧 Setting up Unguard DevContainer..."
-
-# Update system packages
-apt-get update
-apt-get install -y --no-install-recommends \
-    curl \
-    wget \
-    git \
-    vim \
-    nano \
-    jq \
-    build-essential \
-    pkg-config \
-    openssl \
-    libssl-dev \
-    ca-certificates
-
-# Install Node.js (for frontend and user-simulator)
-# Use direct download to avoid package conflicts
-NODE_VERSION="20.11.0"
-curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" | tar -xJ -C /usr/local --strip-components=1
-
-# Install Python (for payment-service and rag-service)
-apt-get install -y python3 python3-pip python3-venv
-pip3 install --upgrade pip setuptools wheel
-
-# Install Java (for multiple services)
-apt-get install -y openjdk-17-jdk maven
-
-# Install .NET SDK (for ad-service and membership-service)
-# Use Microsoft's official installer since apt repos may not have it
-curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
-chmod +x dotnet-install.sh
-./dotnet-install.sh --channel 7.0 --install-dir /usr/local/dotnet
-ln -sf /usr/local/dotnet/dotnet /usr/local/bin/dotnet
-rm dotnet-install.sh
-
-# Install Go (for status-service)
-apt-get install -y golang-go
-
-# Install PHP (for like-service)
-apt-get install -y php php-cli php-fpm php-common php-mbstring php-zip php-mysql
+echo "   (Universal image pre-installed: Node.js, Python, Java, .NET, Go, PHP, Docker, kubectl, Helm)"
 
 # Install Skaffold
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
